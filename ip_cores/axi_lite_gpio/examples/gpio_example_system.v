@@ -11,7 +11,8 @@
 `timescale 1ns / 1ps
 
 module gpio_example_system #(
-    parameter SYS_CLK_FREQ = 100_000_000  // 100MHz system clock
+    parameter SYS_CLK_FREQ = 100_000_000,  // 100MHz system clock
+    parameter UPDATE_PERIOD = 1_000_000     // Update period in clock cycles (default ~10ms)
 ) (
     // System clock and reset
     input  wire        sys_clk,
@@ -114,7 +115,8 @@ module gpio_example_system #(
     // 2. Configure Channel 1 (buttons) as inputs  
     // 3. Periodically update LED pattern based on button state
     simple_axi_master #(
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .UPDATE_PERIOD(UPDATE_PERIOD)
     ) axi_master (
         .aclk(sys_clk),
         .aresetn(sys_resetn),
@@ -156,7 +158,8 @@ endmodule
  * - Update LED patterns
  */
 module simple_axi_master #(
-    parameter ADDR_WIDTH = 4
+    parameter ADDR_WIDTH = 4,
+    parameter UPDATE_PERIOD = 1_000_000
 ) (
     input  wire                   aclk,
     input  wire                   aresetn,
@@ -326,8 +329,8 @@ module simple_axi_master #(
                 end
                 
                 STATE_WAIT: begin
-                    // Wait before next cycle (approximately 10ms at 100MHz)
-                    if (wait_counter < 1_000_000) begin
+                    // Wait before next cycle
+                    if (wait_counter < UPDATE_PERIOD) begin
                         wait_counter <= wait_counter + 1;
                     end else begin
                         wait_counter <= 0;

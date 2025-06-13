@@ -178,6 +178,27 @@ The design includes:
 - AXI4-Lite protocol compliance
 - GPIO functionality validation
 
+### Tests and Examples
+
+Comprehensive test files and example designs are provided:
+
+- **`tb/tb_axi_lite_gpio.v`**: Complete testbench verifying AXI4-Lite protocol compliance and GPIO functionality
+- **`examples/gpio_example_system.v`**: Full system example with LED control and button input
+- **`Makefile`**: Build automation for running tests and examples
+- **`TEST_README.md`**: Detailed documentation for tests and examples
+
+To run tests:
+```bash
+# Run basic GPIO IP testbench
+make test
+
+# Run example system demonstration
+make example
+
+# Run all tests
+make all
+```
+
 ## License
 
 This IP core is provided under the MIT License. See LICENSE file for details.
