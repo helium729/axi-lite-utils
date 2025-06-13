@@ -36,9 +36,11 @@ Complete AXI4-Lite slave interface including:
 - Read Data Channel: `s_axi_rdata`, `s_axi_rresp`, `s_axi_rvalid`, `s_axi_rready`
 
 ### GPIO Interface
-- `gpio_i[NUM_CHANNELS-1:0][GPIO_WIDTH-1:0]` - GPIO input pins
-- `gpio_o[NUM_CHANNELS-1:0][GPIO_WIDTH-1:0]` - GPIO output pins  
-- `gpio_t[NUM_CHANNELS-1:0][GPIO_WIDTH-1:0]` - GPIO tristate control (1=input, 0=output)
+- `gpio_i[GPIO_WIDTH*NUM_CHANNELS-1:0]` - GPIO input pins (flattened array)
+- `gpio_o[GPIO_WIDTH*NUM_CHANNELS-1:0]` - GPIO output pins (flattened array)  
+- `gpio_t[GPIO_WIDTH*NUM_CHANNELS-1:0]` - GPIO tristate control (1=input, 0=output) (flattened array)
+
+**Note**: The GPIO signals are organized as flattened arrays where Channel 0 occupies bits [GPIO_WIDTH-1:0] and Channel 1 (if present) occupies bits [GPIO_WIDTH*2-1:GPIO_WIDTH].
 
 ## Register Map
 
@@ -66,9 +68,9 @@ Complete AXI4-Lite slave interface including:
 
 ## Usage Example
 
-### SystemVerilog Instantiation
+### Verilog Instantiation
 
-```systemverilog
+```verilog
 axi_lite_gpio #(
     .GPIO_WIDTH(16),      // 16-bit GPIO
     .NUM_CHANNELS(2),     // 2 channels
