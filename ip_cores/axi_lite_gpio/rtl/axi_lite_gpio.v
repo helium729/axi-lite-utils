@@ -101,18 +101,25 @@ module axi_lite_gpio #(
     // Internal address registers
     reg [ADDR_WIDTH-1:0] axi_awaddr;
     reg [ADDR_WIDTH-1:0] axi_araddr;
+    reg                  ar_addr_valid;  // Track if we have a pending read
+    reg                  aw_data_valid;  // Track if we have a pending write
     
     // AXI4-Lite Write Address Channel
     always @(posedge aclk) begin
         if (!aresetn) begin
             axi_awready <= 1'b0;
             axi_awaddr <= {ADDR_WIDTH{1'b0}};
+            aw_data_valid <= 1'b0;
         end else begin
             if (~axi_awready && s_axi_awvalid && s_axi_wvalid) begin
                 axi_awready <= 1'b1;
                 axi_awaddr <= s_axi_awaddr;
+                aw_data_valid <= 1'b1;
             end else begin
                 axi_awready <= 1'b0;
+                if (axi_bvalid && s_axi_bready) begin
+                    aw_data_valid <= 1'b0;
+                end
             end
         end
     end
@@ -139,7 +146,7 @@ module axi_lite_gpio #(
             gpio_data_ch1_reg <= 32'h00000000;
             gpio_dir_ch1_reg <= 32'h00000000;  // Default to all inputs
         end else begin
-            if (axi_wready && s_axi_wvalid && axi_awready && s_axi_awvalid) begin
+            if (aw_data_valid && ~axi_bvalid) begin
                 case (axi_awaddr[3:2])
                     2'b00: begin  // Channel 0 Data Register
                         if (s_axi_wstrb[0]) 
@@ -196,7 +203,7 @@ module axi_lite_gpio #(
             axi_bvalid <= 1'b0;
             axi_bresp <= 2'b00;
         end else begin
-            if (axi_awready && s_axi_awvalid && axi_wready && s_axi_wvalid && ~axi_bvalid) begin
+            if (aw_data_valid && ~axi_bvalid) begin
                 axi_bvalid <= 1'b1;
                 axi_bresp <= 2'b00; // OKAY response
             end else begin
@@ -212,12 +219,17 @@ module axi_lite_gpio #(
         if (!aresetn) begin
             axi_arready <= 1'b0;
             axi_araddr <= {ADDR_WIDTH{1'b0}};
+            ar_addr_valid <= 1'b0;
         end else begin
             if (~axi_arready && s_axi_arvalid) begin
                 axi_arready <= 1'b1;
                 axi_araddr <= s_axi_araddr;
+                ar_addr_valid <= 1'b1;
             end else begin
                 axi_arready <= 1'b0;
+                if (axi_rvalid && s_axi_rready) begin
+                    ar_addr_valid <= 1'b0;
+                end
             end
         end
     end
@@ -228,7 +240,7 @@ module axi_lite_gpio #(
             axi_rvalid <= 1'b0;
             axi_rresp <= 2'b00;
         end else begin
-            if (axi_arready && s_axi_arvalid && ~axi_rvalid) begin
+            if (ar_addr_valid && ~axi_rvalid) begin
                 axi_rvalid <= 1'b1;
                 axi_rresp <= 2'b00; // OKAY response
             end else begin
@@ -245,7 +257,7 @@ module axi_lite_gpio #(
         if (!aresetn) begin
             axi_rdata <= 32'h00000000;
         end else begin
-            if (axi_arready && s_axi_arvalid && ~axi_rvalid) begin
+            if (ar_addr_valid && ~axi_rvalid) begin
                 case (axi_araddr[3:2])
                     2'b00: begin  // Channel 0 Data Register
                         axi_rdata <= 32'h00000000;
