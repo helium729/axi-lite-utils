@@ -6,8 +6,8 @@ The AXI4-Lite GPIO Controller is a configurable general-purpose input/output (GP
 
 ## Features
 
-- **Configurable Width**: Support for 1 to 32-bit GPIO width per channel
-- **Multi-Channel Support**: Up to 2 independent GPIO channels
+- **Configurable Width Per Channel**: Support for 1 to 32-bit GPIO width per channel (each channel can have different width)
+- **Multi-Channel Support**: Up to 2 independent GPIO channels with different configurations
 - **Individual Pin Control**: Each GPIO pin can be independently configured as input or output
 - **AXI4-Lite Interface**: Standard AXI4-Lite slave interface for easy system integration
 - **Tristate Control**: Proper tristate control for bidirectional GPIO pins
@@ -17,7 +17,8 @@ The AXI4-Lite GPIO Controller is a configurable general-purpose input/output (GP
 
 | Parameter | Type | Default | Range | Description |
 |-----------|------|---------|-------|-------------|
-| `GPIO_WIDTH` | int | 8 | 1-32 | Width of each GPIO channel in bits |
+| `GPIO_WIDTH_CH0` | int | 8 | 1-32 | Width of GPIO channel 0 in bits |
+| `GPIO_WIDTH_CH1` | int | 8 | 1-32 | Width of GPIO channel 1 in bits |
 | `NUM_CHANNELS` | int | 1 | 1-2 | Number of GPIO channels |
 | `ADDR_WIDTH` | int | 4 | ≥4 | AXI4-Lite address width |
 
@@ -36,15 +37,15 @@ Complete AXI4-Lite slave interface including:
 - Read Data Channel: `s_axi_rdata`, `s_axi_rresp`, `s_axi_rvalid`, `s_axi_rready`
 
 ### GPIO Interface
-- **Channel 1**: `gpio_io_i[GPIO_WIDTH-1:0]`, `gpio_io_o[GPIO_WIDTH-1:0]`, `gpio_io_t[GPIO_WIDTH-1:0]`
-- **Channel 2**: `gpio2_io_i[GPIO_WIDTH-1:0]`, `gpio2_io_o[GPIO_WIDTH-1:0]`, `gpio2_io_t[GPIO_WIDTH-1:0]` (only present if NUM_CHANNELS > 1)
+- **Channel 0**: `gpio_io_i[GPIO_WIDTH_CH0-1:0]`, `gpio_io_o[GPIO_WIDTH_CH0-1:0]`, `gpio_io_t[GPIO_WIDTH_CH0-1:0]`
+- **Channel 1**: `gpio2_io_i[GPIO_WIDTH_CH1-1:0]`, `gpio2_io_o[GPIO_WIDTH_CH1-1:0]`, `gpio2_io_t[GPIO_WIDTH_CH1-1:0]` (only present if NUM_CHANNELS > 1)
 
 Where:
 - `gpio_io_i` / `gpio2_io_i` - GPIO input pins for each channel
 - `gpio_io_o` / `gpio2_io_o` - GPIO output pins for each channel
 - `gpio_io_t` / `gpio2_io_t` - GPIO tristate control (1=input, 0=output) for each channel
 
-**Note**: Channel 2 signals are always present in the interface but are tied to safe values when NUM_CHANNELS = 1.
+**Note**: Channel 1 signals are always present in the interface but are tied to safe values when NUM_CHANNELS = 1.
 
 ## Register Map
 
@@ -76,7 +77,8 @@ Where:
 
 ```verilog
 axi_lite_gpio #(
-    .GPIO_WIDTH(16),      // 16-bit GPIO
+    .GPIO_WIDTH_CH0(16),  // 16-bit GPIO Channel 0
+    .GPIO_WIDTH_CH1(8),   // 8-bit GPIO Channel 1
     .NUM_CHANNELS(2),     // 2 channels
     .ADDR_WIDTH(4)        // 4-bit address
 ) gpio_inst (
@@ -104,15 +106,15 @@ axi_lite_gpio #(
     .s_axi_rvalid(s_axi_rvalid),
     .s_axi_rready(s_axi_rready),
     
-    // GPIO interface - Channel 1
-    .gpio_io_i(gpio1_inputs),
-    .gpio_io_o(gpio1_outputs),
-    .gpio_io_t(gpio1_tristate),
+    // GPIO interface - Channel 0 (16-bit)
+    .gpio_io_i(gpio0_inputs),
+    .gpio_io_o(gpio0_outputs),
+    .gpio_io_t(gpio0_tristate),
     
-    // GPIO interface - Channel 2 (if NUM_CHANNELS > 1)
-    .gpio2_io_i(gpio2_inputs),
-    .gpio2_io_o(gpio2_outputs),
-    .gpio2_io_t(gpio2_tristate)
+    // GPIO interface - Channel 1 (8-bit)
+    .gpio2_io_i(gpio1_inputs),
+    .gpio2_io_o(gpio1_outputs),
+    .gpio2_io_t(gpio1_tristate)
 );
 ```
 
@@ -159,14 +161,14 @@ uint32_t ch0_value = *(volatile uint32_t*)CH0_DATA_REG;
 ## Resource Utilization
 
 The resource utilization will vary based on parameters:
-- **GPIO_WIDTH**: Directly affects register width and GPIO pin count
-- **NUM_CHANNELS**: Doubles the register count when set to 2
+- **GPIO_WIDTH_CH0/CH1**: Directly affects register width and GPIO pin count for each channel
+- **NUM_CHANNELS**: Determines number of active channels
 - **ADDR_WIDTH**: Minimal impact on resources
 
-Typical utilization for a 16-bit, 2-channel configuration:
-- **Registers**: ~96 bits (2 channels × 2 registers × 16 bits + AXI control)
+Typical utilization for a 16-bit channel 0 + 8-bit channel 1 configuration:
+- **Registers**: ~96 bits (16+8 bits × 2 registers/channel + AXI control)
 - **LUTs**: ~50-100 (depending on target device)
-- **I/O Pins**: 32 (16 × 2 channels)
+- **I/O Pins**: 24 (16 + 8 pins)
 
 ## Verification
 
