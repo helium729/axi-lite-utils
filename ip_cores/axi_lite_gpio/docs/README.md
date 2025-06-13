@@ -36,11 +36,15 @@ Complete AXI4-Lite slave interface including:
 - Read Data Channel: `s_axi_rdata`, `s_axi_rresp`, `s_axi_rvalid`, `s_axi_rready`
 
 ### GPIO Interface
-- `gpio_i[GPIO_WIDTH*NUM_CHANNELS-1:0]` - GPIO input pins (flattened array)
-- `gpio_o[GPIO_WIDTH*NUM_CHANNELS-1:0]` - GPIO output pins (flattened array)  
-- `gpio_t[GPIO_WIDTH*NUM_CHANNELS-1:0]` - GPIO tristate control (1=input, 0=output) (flattened array)
+- **Channel 1**: `gpio_io_i[GPIO_WIDTH-1:0]`, `gpio_io_o[GPIO_WIDTH-1:0]`, `gpio_io_t[GPIO_WIDTH-1:0]`
+- **Channel 2**: `gpio2_io_i[GPIO_WIDTH-1:0]`, `gpio2_io_o[GPIO_WIDTH-1:0]`, `gpio2_io_t[GPIO_WIDTH-1:0]` (only present if NUM_CHANNELS > 1)
 
-**Note**: The GPIO signals are organized as flattened arrays where Channel 0 occupies bits [GPIO_WIDTH-1:0] and Channel 1 (if present) occupies bits [GPIO_WIDTH*2-1:GPIO_WIDTH].
+Where:
+- `gpio_io_i` / `gpio2_io_i` - GPIO input pins for each channel
+- `gpio_io_o` / `gpio2_io_o` - GPIO output pins for each channel
+- `gpio_io_t` / `gpio2_io_t` - GPIO tristate control (1=input, 0=output) for each channel
+
+**Note**: Channel 2 signals are always present in the interface but are tied to safe values when NUM_CHANNELS = 1.
 
 ## Register Map
 
@@ -100,10 +104,15 @@ axi_lite_gpio #(
     .s_axi_rvalid(s_axi_rvalid),
     .s_axi_rready(s_axi_rready),
     
-    // GPIO interface
-    .gpio_i(gpio_inputs),
-    .gpio_o(gpio_outputs),
-    .gpio_t(gpio_tristate)
+    // GPIO interface - Channel 1
+    .gpio_io_i(gpio1_inputs),
+    .gpio_io_o(gpio1_outputs),
+    .gpio_io_t(gpio1_tristate),
+    
+    // GPIO interface - Channel 2 (if NUM_CHANNELS > 1)
+    .gpio2_io_i(gpio2_inputs),
+    .gpio2_io_o(gpio2_outputs),
+    .gpio2_io_t(gpio2_tristate)
 );
 ```
 

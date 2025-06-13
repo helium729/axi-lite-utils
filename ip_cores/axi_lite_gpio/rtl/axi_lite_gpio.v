@@ -54,10 +54,15 @@ module axi_lite_gpio #(
     output                          s_axi_rvalid,
     input                           s_axi_rready,
     
-    // GPIO Interface
-    input  [GPIO_WIDTH*NUM_CHANNELS-1:0]  gpio_i,   // GPIO input
-    output [GPIO_WIDTH*NUM_CHANNELS-1:0]  gpio_o,   // GPIO output  
-    output [GPIO_WIDTH*NUM_CHANNELS-1:0]  gpio_t    // GPIO tristate (1=input, 0=output)
+    // GPIO Interface - Channel 1
+    input  [GPIO_WIDTH-1:0]               gpio_io_i,    // GPIO Channel 1 input
+    output [GPIO_WIDTH-1:0]               gpio_io_o,    // GPIO Channel 1 output  
+    output [GPIO_WIDTH-1:0]               gpio_io_t,    // GPIO Channel 1 tristate (1=input, 0=output)
+    
+    // GPIO Interface - Channel 2 (only present if NUM_CHANNELS > 1)
+    input  [GPIO_WIDTH-1:0]               gpio2_io_i,   // GPIO Channel 2 input
+    output [GPIO_WIDTH-1:0]               gpio2_io_o,   // GPIO Channel 2 output  
+    output [GPIO_WIDTH-1:0]               gpio2_io_t    // GPIO Channel 2 tristate (1=input, 0=output)
 );
 
     // Parameter validation
@@ -236,10 +241,10 @@ module axi_lite_gpio #(
                 case (axi_araddr[3:2])
                     2'b00: begin  // Channel 0 Data Register
                         axi_rdata <= 32'h00000000;
-                        // For inputs, read from gpio_i; for outputs, read from gpio_data_reg
+                        // For inputs, read from gpio_io_i; for outputs, read from gpio_data_reg
                         for (i = 0; i < GPIO_WIDTH; i = i + 1) begin
                             if (i < 32) begin
-                                axi_rdata[i] <= gpio_dir_reg[i] ? gpio_data_reg[i] : gpio_i[i];
+                                axi_rdata[i] <= gpio_dir_reg[i] ? gpio_data_reg[i] : gpio_io_i[i];
                             end
                         end
                     end
@@ -256,7 +261,7 @@ module axi_lite_gpio #(
                         if (NUM_CHANNELS > 1) begin
                             for (i = 0; i < GPIO_WIDTH; i = i + 1) begin
                                 if (i < 32) begin
-                                    axi_rdata[i] <= gpio_dir_reg[GPIO_WIDTH+i] ? gpio_data_reg[GPIO_WIDTH+i] : gpio_i[GPIO_WIDTH+i];
+                                    axi_rdata[i] <= gpio_dir_reg[GPIO_WIDTH+i] ? gpio_data_reg[GPIO_WIDTH+i] : gpio2_io_i[i];
                                 end
                             end
                         end
@@ -277,11 +282,16 @@ module axi_lite_gpio #(
     end
     
     // GPIO output assignments
+    assign gpio_io_o = gpio_data_reg[GPIO_WIDTH-1:0];
+    assign gpio_io_t = ~gpio_dir_reg[GPIO_WIDTH-1:0];  // Invert: 1=input (tristate), 0=output
+    
     generate
-        genvar ch;
-        for (ch = 0; ch < NUM_CHANNELS; ch = ch + 1) begin : gen_gpio_channels
-            assign gpio_o[GPIO_WIDTH*(ch+1)-1:GPIO_WIDTH*ch] = gpio_data_reg[GPIO_WIDTH*(ch+1)-1:GPIO_WIDTH*ch];
-            assign gpio_t[GPIO_WIDTH*(ch+1)-1:GPIO_WIDTH*ch] = ~gpio_dir_reg[GPIO_WIDTH*(ch+1)-1:GPIO_WIDTH*ch];  // Invert: 1=input (tristate), 0=output
+        if (NUM_CHANNELS > 1) begin : gen_gpio2_channel
+            assign gpio2_io_o = gpio_data_reg[GPIO_WIDTH*2-1:GPIO_WIDTH];
+            assign gpio2_io_t = ~gpio_dir_reg[GPIO_WIDTH*2-1:GPIO_WIDTH];  // Invert: 1=input (tristate), 0=output
+        end else begin : gen_gpio2_unused
+            assign gpio2_io_o = {GPIO_WIDTH{1'b0}};
+            assign gpio2_io_t = {GPIO_WIDTH{1'b1}};  // All inputs when unused
         end
     endgenerate
     
