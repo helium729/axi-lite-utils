@@ -31,6 +31,21 @@ A configurable UART controller with AXI4-Lite slave interface.
 
 **Documentation**: [AXI4-Lite UART README](ip_cores/axi_lite_uart/docs/README.md)
 
+### AXI4-Lite SPI Controller
+**Location**: `ip_cores/axi_lite_spi/`
+
+A configurable SPI controller with AXI4-Lite slave interface.
+
+**Features:**
+- SPI master interface with configurable modes (CPOL/CPHA)
+- Configurable data width (8, 16, or 32 bits)
+- Programmable clock divider for SPI clock generation
+- Manual chip select control
+- Status monitoring (busy, data ready)
+- Standard AXI4-Lite slave interface
+
+**Documentation**: [AXI4-Lite SPI README](ip_cores/axi_lite_spi/docs/README.md)
+
 ## Repository Structure
 
 ```
@@ -40,7 +55,11 @@ axi-lite-utils/
 │   │   ├── rtl/                # RTL source files
 │   │   ├── tb/                 # Testbenches
 │   │   └── docs/               # Documentation
-│   └── axi_lite_uart/          # AXI4-Lite UART Controller
+│   ├── axi_lite_uart/          # AXI4-Lite UART Controller
+│   │   ├── rtl/                # RTL source files
+│   │   ├── tb/                 # Testbenches
+│   │   └── docs/               # Documentation
+│   └── axi_lite_spi/           # AXI4-Lite SPI Controller
 │       ├── rtl/                # RTL source files
 │       ├── tb/                 # Testbenches
 │       └── docs/               # Documentation
